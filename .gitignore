@@ -1,0 +1,5 @@
+target/
+.quarkus/
+*.log
+*.tmp
+.DS_Store
