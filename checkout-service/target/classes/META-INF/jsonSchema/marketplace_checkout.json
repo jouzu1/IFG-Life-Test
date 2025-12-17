@@ -1,0 +1,1 @@
+{"$schema":"https://json-schema.org/draft/2019-09/schema","type":"object","properties":{"cartId":{"type":"string"},"inventoryAvailable":{"type":"boolean"},"orderId":{"type":"string"},"orderStatus":{"type":"string"},"paymentApproved":{"type":"boolean"},"totalAmount":{"type":"string"},"userId":{"type":"string"}}}

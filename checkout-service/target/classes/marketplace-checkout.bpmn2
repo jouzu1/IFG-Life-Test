@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn2:definitions
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+  xmlns:drools="http://www.drools.org/kie/drools-extensions"
+  id="Definition"
+  targetNamespace="http://www.example.com/marketplace-checkout">
+
+  <bpmn2:itemDefinition id="String" structureRef="String"/>
+  <bpmn2:itemDefinition id="Boolean" structureRef="Boolean"/>
+
+  <bpmn2:process id="marketplace_checkout" name="Marketplace Checkout" isExecutable="true">
+
+    <bpmn2:property id="cartId" itemSubjectRef="String"/>
+    <bpmn2:property id="userId" itemSubjectRef="String"/>
+    <bpmn2:property id="totalAmount" itemSubjectRef="String"/>
+    <bpmn2:property id="inventoryAvailable" itemSubjectRef="Boolean"/>
+    <bpmn2:property id="paymentApproved" itemSubjectRef="Boolean"/>
+    <bpmn2:property id="orderId" itemSubjectRef="String"/>
+    <bpmn2:property id="orderStatus" itemSubjectRef="String"/>
+
+    <bpmn2:startEvent id="StartEvent_Checkout" name="Start Checkout">
+      <bpmn2:outgoing>flow_start_validate</bpmn2:outgoing>
+    </bpmn2:startEvent>
+
+    <bpmn2:task id="Task_ValidateCart" name="Validate Cart" drools:taskName="validateCart">
+      <bpmn2:incoming>flow_start_validate</bpmn2:incoming>
+      <bpmn2:outgoing>flow_validate_inventory</bpmn2:outgoing>
+      <bpmn2:ioSpecification>
+        <bpmn2:dataInput id="Input_CartId" name="cartId"/>
+        <bpmn2:inputSet>
+          <bpmn2:dataInputRefs>Input_CartId</bpmn2:dataInputRefs>
+        </bpmn2:inputSet>
+        <bpmn2:outputSet/>
+      </bpmn2:ioSpecification>
+      <bpmn2:dataInputAssociation>
+        <bpmn2:sourceRef>cartId</bpmn2:sourceRef>
+        <bpmn2:targetRef>Input_CartId</bpmn2:targetRef>
+      </bpmn2:dataInputAssociation>
+      <bpmn2:extensionElements>
+        <drools:metaData name="taskName">
+          <drools:metaValue>validateCart</drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+    </bpmn2:task>
+
+    <bpmn2:task id="Task_ReserveInventory" name="Reserve Inventory" drools:taskName="reserveInventory">
+      <bpmn2:incoming>flow_validate_inventory</bpmn2:incoming>
+      <bpmn2:outgoing>flow_inventory_gateway</bpmn2:outgoing>
+      <bpmn2:ioSpecification>
+         <bpmn2:dataInput id="Inv_CartId" name="cartId"/>
+         <bpmn2:dataOutput id="Inv_Result" name="inventoryAvailable"/>
+         <bpmn2:dataOutput id="Inv_Status" name="orderStatus"/>
+         <bpmn2:inputSet>
+            <bpmn2:dataInputRefs>Inv_CartId</bpmn2:dataInputRefs>
+         </bpmn2:inputSet>
+         <bpmn2:outputSet>
+            <bpmn2:dataOutputRefs>Inv_Result</bpmn2:dataOutputRefs>
+            <bpmn2:dataOutputRefs>Inv_Status</bpmn2:dataOutputRefs>
+         </bpmn2:outputSet>
+      </bpmn2:ioSpecification>
+      <bpmn2:dataInputAssociation>
+        <bpmn2:sourceRef>cartId</bpmn2:sourceRef>
+        <bpmn2:targetRef>Inv_CartId</bpmn2:targetRef>
+      </bpmn2:dataInputAssociation>
+      <bpmn2:dataOutputAssociation>
+        <bpmn2:sourceRef>Inv_Result</bpmn2:sourceRef>
+        <bpmn2:targetRef>inventoryAvailable</bpmn2:targetRef>
+      </bpmn2:dataOutputAssociation>
+      <bpmn2:dataOutputAssociation>
+        <bpmn2:sourceRef>Inv_Status</bpmn2:sourceRef>
+        <bpmn2:targetRef>orderStatus</bpmn2:targetRef>
+      </bpmn2:dataOutputAssociation>
+      <bpmn2:extensionElements>
+        <drools:metaData name="taskName">
+          <drools:metaValue>reserveInventory</drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+    </bpmn2:task>
+
+    <bpmn2:exclusiveGateway id="Gateway_InventoryOk" name="Inventory OK?" gatewayDirection="Diverging">
+      <bpmn2:incoming>flow_inventory_gateway</bpmn2:incoming>
+      <bpmn2:outgoing>flow_inventory_ok_total</bpmn2:outgoing>
+      <bpmn2:outgoing>flow_inventory_not_ok_end</bpmn2:outgoing>
+    </bpmn2:exclusiveGateway>
+
+    <bpmn2:task id="Task_CalculateTotal" name="Calculate Total" drools:taskName="calculateTotal">
+      <bpmn2:incoming>flow_inventory_ok_total</bpmn2:incoming>
+      <bpmn2:outgoing>flow_total_payment</bpmn2:outgoing>
+      <bpmn2:extensionElements>
+        <drools:metaData name="taskName">
+          <drools:metaValue>calculateTotal</drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+    </bpmn2:task>
+
+    <bpmn2:task id="Task_ProcessPayment" name="Process Payment" drools:taskName="processPayment">
+      <bpmn2:incoming>flow_total_payment</bpmn2:incoming>
+      <bpmn2:outgoing>flow_payment_gateway</bpmn2:outgoing>
+      <bpmn2:ioSpecification>
+        <bpmn2:dataInput id="Pay_CartId" name="cartId"/>
+        <bpmn2:dataOutput id="Pay_Approved" name="paymentApproved"/>
+        <bpmn2:dataOutput id="Pay_Status" name="orderStatus"/>
+        <bpmn2:inputSet>
+            <bpmn2:dataInputRefs>Pay_CartId</bpmn2:dataInputRefs>
+        </bpmn2:inputSet>
+        <bpmn2:outputSet>
+            <bpmn2:dataOutputRefs>Pay_Approved</bpmn2:dataOutputRefs>
+            <bpmn2:dataOutputRefs>Pay_Status</bpmn2:dataOutputRefs>
+        </bpmn2:outputSet>
+      </bpmn2:ioSpecification>
+      <bpmn2:dataInputAssociation>
+        <bpmn2:sourceRef>cartId</bpmn2:sourceRef>
+        <bpmn2:targetRef>Pay_CartId</bpmn2:targetRef>
+      </bpmn2:dataInputAssociation>
+      <bpmn2:dataOutputAssociation>
+        <bpmn2:sourceRef>Pay_Approved</bpmn2:sourceRef>
+        <bpmn2:targetRef>paymentApproved</bpmn2:targetRef>
+      </bpmn2:dataOutputAssociation>
+      <bpmn2:dataOutputAssociation>
+        <bpmn2:sourceRef>Pay_Status</bpmn2:sourceRef>
+        <bpmn2:targetRef>orderStatus</bpmn2:targetRef>
+      </bpmn2:dataOutputAssociation>
+      <bpmn2:extensionElements>
+        <drools:metaData name="taskName">
+          <drools:metaValue>processPayment</drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+    </bpmn2:task>
+
+    <bpmn2:exclusiveGateway id="Gateway_PaymentOk" name="Payment OK?" gatewayDirection="Diverging">
+      <bpmn2:incoming>flow_payment_gateway</bpmn2:incoming>
+      <bpmn2:outgoing>flow_payment_ok_create_order</bpmn2:outgoing>
+      <bpmn2:outgoing>flow_payment_not_ok_end</bpmn2:outgoing>
+    </bpmn2:exclusiveGateway>
+
+    <bpmn2:task id="Task_CreateOrder" name="Create Order" drools:taskName="createOrder">
+      <bpmn2:incoming>flow_payment_ok_create_order</bpmn2:incoming>
+      <bpmn2:outgoing>flow_create_order_notify</bpmn2:outgoing>
+      <bpmn2:ioSpecification>
+        <bpmn2:dataOutput id="Order_Status_Succ" name="orderStatus"/>
+        <bpmn2:outputSet>
+            <bpmn2:dataOutputRefs>Order_Status_Succ</bpmn2:dataOutputRefs>
+        </bpmn2:outputSet>
+      </bpmn2:ioSpecification>
+      <bpmn2:dataOutputAssociation>
+        <bpmn2:sourceRef>Order_Status_Succ</bpmn2:sourceRef>
+        <bpmn2:targetRef>orderStatus</bpmn2:targetRef>
+      </bpmn2:dataOutputAssociation>
+      <bpmn2:extensionElements>
+        <drools:metaData name="taskName">
+          <drools:metaValue>createOrder</drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+    </bpmn2:task>
+
+    <bpmn2:task id="Task_SendNotification" name="Send Notification" drools:taskName="sendNotification">
+      <bpmn2:incoming>flow_create_order_notify</bpmn2:incoming>
+      <bpmn2:outgoing>flow_notify_end_success</bpmn2:outgoing>
+      <bpmn2:extensionElements>
+        <drools:metaData name="taskName">
+          <drools:metaValue>sendNotification</drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+    </bpmn2:task>
+
+    <bpmn2:endEvent id="EndEvent_Success" name="Success">
+      <bpmn2:incoming>flow_notify_end_success</bpmn2:incoming>
+    </bpmn2:endEvent>
+
+    <bpmn2:endEvent id="EndEvent_InventoryFailed" name="Inventory Failed">
+      <bpmn2:incoming>flow_inventory_not_ok_end</bpmn2:incoming>
+    </bpmn2:endEvent>
+
+    <bpmn2:endEvent id="EndEvent_PaymentFailed" name="Payment Failed">
+      <bpmn2:incoming>flow_payment_not_ok_end</bpmn2:incoming>
+    </bpmn2:endEvent>
+
+    <bpmn2:sequenceFlow id="flow_start_validate" sourceRef="StartEvent_Checkout" targetRef="Task_ValidateCart"/>
+    <bpmn2:sequenceFlow id="flow_validate_inventory" sourceRef="Task_ValidateCart" targetRef="Task_ReserveInventory"/>
+    <bpmn2:sequenceFlow id="flow_inventory_gateway" sourceRef="Task_ReserveInventory" targetRef="Gateway_InventoryOk"/>
+    
+    <bpmn2:sequenceFlow id="flow_inventory_ok_total" sourceRef="Gateway_InventoryOk" targetRef="Task_CalculateTotal">
+        <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" language="http://www.java.com/java">return inventoryAvailable == true;</bpmn2:conditionExpression>
+    </bpmn2:sequenceFlow>
+    
+    <bpmn2:sequenceFlow id="flow_inventory_not_ok_end" sourceRef="Gateway_InventoryOk" targetRef="EndEvent_InventoryFailed">
+        <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" language="http://www.java.com/java">return inventoryAvailable == false;</bpmn2:conditionExpression>
+    </bpmn2:sequenceFlow>
+
+    <bpmn2:sequenceFlow id="flow_total_payment" sourceRef="Task_CalculateTotal" targetRef="Task_ProcessPayment"/>
+    <bpmn2:sequenceFlow id="flow_payment_gateway" sourceRef="Task_ProcessPayment" targetRef="Gateway_PaymentOk"/>
+    
+    <bpmn2:sequenceFlow id="flow_payment_ok_create_order" sourceRef="Gateway_PaymentOk" targetRef="Task_CreateOrder">
+        <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" language="http://www.java.com/java">return paymentApproved == true;</bpmn2:conditionExpression>
+    </bpmn2:sequenceFlow>
+    
+    <bpmn2:sequenceFlow id="flow_payment_not_ok_end" sourceRef="Gateway_PaymentOk" targetRef="EndEvent_PaymentFailed">
+        <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" language="http://www.java.com/java">return paymentApproved == false;</bpmn2:conditionExpression>
+    </bpmn2:sequenceFlow>
+    
+    <bpmn2:sequenceFlow id="flow_create_order_notify" sourceRef="Task_CreateOrder" targetRef="Task_SendNotification"/>
+    <bpmn2:sequenceFlow id="flow_notify_end_success" sourceRef="Task_SendNotification" targetRef="EndEvent_Success"/>
+
+  </bpmn2:process>
+</bpmn2:definitions>

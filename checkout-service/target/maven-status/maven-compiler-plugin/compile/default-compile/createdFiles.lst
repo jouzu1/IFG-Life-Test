@@ -1,0 +1,7 @@
+com\example\checkout\service\SendNotificationHandler.class
+com\example\checkout\service\CreateOrderHandler.class
+com\example\checkout\CheckoutWorkItemHandlerConfig.class
+com\example\checkout\service\ReserveInventoryHandler.class
+com\example\checkout\service\CalculateTotalHandler.class
+com\example\checkout\service\ProcessPaymentHandler.class
+com\example\checkout\service\ValidateCartHandler.class
