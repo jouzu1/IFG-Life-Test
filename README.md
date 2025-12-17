@@ -74,7 +74,7 @@ To verify that the BPMN flow runs as designed:
 mvn clean test
 ```
 
-### Running in Dev Mode
+### Running in Dev Mode (Optional, since there is no requirement to running it like a service)
 To run the application locally (with hot-reload):
 ```bash
 mvn quarkus:dev
